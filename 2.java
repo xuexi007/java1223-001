@@ -12,81 +12,82 @@ import org.springframework.data.redis.core.RedisTemplate;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+//**************************************æœåŠ¡å™¨ç«¯ä¿®æ”¹****************************************
 @Service
 public class CartServiceImpl implements CartService {
 
-    //×¢Èësku±íÊı¾İ²Ù×÷½Ó¿Ú
+    //æ³¨å…¥skuè¡¨æ•°æ®æ“ä½œæ¥å£
     @Autowired
     private TbItemMapper itemMapper;
 
-    //×¢ÈëRedisÄ£°å²Ù×÷¹¤¾ßÀà
+    //æ³¨å…¥Redisæ¨¡æ¿æ“ä½œå·¥å…·ç±»
     @Autowired
     private RedisTemplate redisTemplate;
 
     @Override
     public List<Cart> addGoodsToCartList(List<Cart> cartList, Long itemId, Integer num) {
-       //1¡¢¸ú¾İskuÉÌÆ·±àºÅ£¬²éÑ¯skuÉÌÆ·ĞÅÏ¢
+       //1ã€è·Ÿæ®skuå•†å“ç¼–å·ï¼ŒæŸ¥è¯¢skuå•†å“ä¿¡æ¯
         TbItem item = itemMapper.selectByPrimaryKey(itemId);
-        //1.1¡¢ÅĞ¶Ïsku¶ÔÏóÊÇ·ñÎª¿Õ
+        //1.1ã€åˆ¤æ–­skuå¯¹è±¡æ˜¯å¦ä¸ºç©º
         if(item==null){
-            //ÉÌÆ·²»´æÔÚ£¬½áÊøÌí¼Ó¹ºÎï³µ²Ù×÷£¬Å×³öÒì³£
-            throw new RuntimeException("ÒªÌí¼Óµ½¹ºÎï³µµÄÉÌÆ·²»´æÔÚ");
+            //å•†å“ä¸å­˜åœ¨ï¼Œç»“æŸæ·»åŠ è´­ç‰©è½¦æ“ä½œï¼ŒæŠ›å‡ºå¼‚å¸¸
+            throw new RuntimeException("è¦æ·»åŠ åˆ°è´­ç‰©è½¦çš„å•†å“ä¸å­˜åœ¨");
         }
-        //1.2¡¢ÅĞ¶ÏÉÌÆ·×´Ì¬ ÊÇ·ñÊÇÉóºËÍ¨¹ı 1
+        //1.2ã€åˆ¤æ–­å•†å“çŠ¶æ€ æ˜¯å¦æ˜¯å®¡æ ¸é€šè¿‡ 1
         if(!item.getStatus().equals("1")){
-            throw new RuntimeException("ÉÌÆ·Î´ÉóºËÍ¨¹ı");
+            throw new RuntimeException("å•†å“æœªå®¡æ ¸é€šè¿‡");
         }
 
-        //2¡¢»ñÈ¡¸ÃÉÌÆ·ËùÊôÉÌ¼Ò±àºÅ
+        //2ã€è·å–è¯¥å•†å“æ‰€å±å•†å®¶ç¼–å·
         String sellerId = item.getSellerId();
-        //3¡¢¸ù¾İÉÌ¼Ò±àºÅ£¬È¥±éÀú¹ºÎï³µ¼¯ºÏ£¬ÅĞ¶ÏÊÇ·ñ´æÔÚ¸ÃÉÌ¼Ò¹ºÎï³µ¶ÔÏó
+        //3ã€æ ¹æ®å•†å®¶ç¼–å·ï¼Œå»éå†è´­ç‰©è½¦é›†åˆï¼Œåˆ¤æ–­æ˜¯å¦å­˜åœ¨è¯¥å•†å®¶è´­ç‰©è½¦å¯¹è±¡
         Cart cart = searchCartListBySellerId(cartList, sellerId);
-        //4¡¢ÅĞ¶Ï¸ÃÉÌ¼ÒµÄ¹ºÎï³µ¶ÔÏóÊÇ·ñ´æÔÚ
+        //4ã€åˆ¤æ–­è¯¥å•†å®¶çš„è´­ç‰©è½¦å¯¹è±¡æ˜¯å¦å­˜åœ¨
         if(cart==null){
-            //5¡¢µÚÒ»¸öÇé¿ö£¬¸ÃÉÌ¼Ò¹ºÎï³µ¶ÔÏó²»´æÔÚ£¬´´½¨¸ÃÉÌ¼ÒµÄ¹ºÎï³µ¶ÔÏó
+            //5ã€ç¬¬ä¸€ä¸ªæƒ…å†µï¼Œè¯¥å•†å®¶è´­ç‰©è½¦å¯¹è±¡ä¸å­˜åœ¨ï¼Œåˆ›å»ºè¯¥å•†å®¶çš„è´­ç‰©è½¦å¯¹è±¡
             cart=new Cart();
-            //ÉèÖÃ¹ºÎï³µ¶ÔÏó£¬ËùÊôÉÌ¼Ò±àºÅ
+            //è®¾ç½®è´­ç‰©è½¦å¯¹è±¡ï¼Œæ‰€å±å•†å®¶ç¼–å·
             cart.setSellerId(sellerId);
-            //ÉèÖÃ¹ºÎï³µ¶ÔÏó£¬ÉÌ¼ÒÃû³Æ
+            //è®¾ç½®è´­ç‰©è½¦å¯¹è±¡ï¼Œå•†å®¶åç§°
             cart.setSellerName(item.getSeller());
-            //´´½¨Ò»¸ö¹ºÎïÃ÷Ï¸¼¯ºÏ
+            //åˆ›å»ºä¸€ä¸ªè´­ç‰©æ˜ç»†é›†åˆ
             List<TbOrderItem> orderItemList=new ArrayList<>();
-            //´´½¨¹ºÎïÃ÷Ï¸
+            //åˆ›å»ºè´­ç‰©æ˜ç»†
             TbOrderItem orderItem = createOrderItem(item, num);
-            //°Ñ¹ºÎïÃ÷Ï¸´æ·Åµ½¹ºÎïÃ÷Ï¸¼¯ºÏ
+            //æŠŠè´­ç‰©æ˜ç»†å­˜æ”¾åˆ°è´­ç‰©æ˜ç»†é›†åˆ
             orderItemList.add(orderItem);
-            //°Ñ¹ºÎïÃ÷Ï¸¼¯ºÏÌí¼Óµ½¹ºÎï³µ¶ÔÏó
+            //æŠŠè´­ç‰©æ˜ç»†é›†åˆæ·»åŠ åˆ°è´­ç‰©è½¦å¯¹è±¡
             cart.setOrderItemList(orderItemList);
 
-            //Ç§Íò±ğÍü¼Ç£¬°ÑĞÂ½¨µÄ¹ºÎï³µ¶ÔÏóÌí¼Óµ½µ±Ç°¹ºÎï³µ¼¯ºÏ
+            //åƒä¸‡åˆ«å¿˜è®°ï¼ŒæŠŠæ–°å»ºçš„è´­ç‰©è½¦å¯¹è±¡æ·»åŠ åˆ°å½“å‰è´­ç‰©è½¦é›†åˆ
             cartList.add(cart);
 
 
         }else {
-            //6¡¢µÚ¶şÖÖÇé¿ö£¬¹ºÎï³µ¼¯ºÏ´æÔÚ¸ÃÉÌ¼Ò¹ºÎï³µ¶ÔÏó
+            //6ã€ç¬¬äºŒç§æƒ…å†µï¼Œè´­ç‰©è½¦é›†åˆå­˜åœ¨è¯¥å•†å®¶è´­ç‰©è½¦å¯¹è±¡
 
-            //7¡¢ĞèÒªÅĞ¶ÏÒª¼ÓÈëµ½¹ºÎï³µÉÌÆ·ÔÚ¸ÃÉÌ¼Ò¹ºÎï³µÀïÃæµÄ¹ºÎïÃ÷Ï¸ÖĞÊÇ·ñ´æÔÚ
+            //7ã€éœ€è¦åˆ¤æ–­è¦åŠ å…¥åˆ°è´­ç‰©è½¦å•†å“åœ¨è¯¥å•†å®¶è´­ç‰©è½¦é‡Œé¢çš„è´­ç‰©æ˜ç»†ä¸­æ˜¯å¦å­˜åœ¨
             TbOrderItem orderItem = searchOrderItemByItemid(cart.getOrderItemList(), itemId);
-             //8¡¢µÚÒ»ÖÖÇé¿ö£¬ÒªÌí¼Óµ½¹ºÎï³µÉÌÆ·ÔÚ¹ºÎïÃ÷Ï¸ÖĞÄ¿Ç°²»´æÔÚ
+             //8ã€ç¬¬ä¸€ç§æƒ…å†µï¼Œè¦æ·»åŠ åˆ°è´­ç‰©è½¦å•†å“åœ¨è´­ç‰©æ˜ç»†ä¸­ç›®å‰ä¸å­˜åœ¨
             if(orderItem==null){
-                //´´½¨Ò»¸ö¹ºÎïÃ÷Ï¸¶ÔÏó£¬
+                //åˆ›å»ºä¸€ä¸ªè´­ç‰©æ˜ç»†å¯¹è±¡ï¼Œ
                 orderItem= createOrderItem(item,num);
-                //°Ñ¹ºÎïÃ÷Ï¸Ôö¼Óµ±Ç°¹ºÎï¶ÔÏóµÄ¹ºÎïÃ÷Ï¸¼¯ºÏ
+                //æŠŠè´­ç‰©æ˜ç»†å¢åŠ å½“å‰è´­ç‰©å¯¹è±¡çš„è´­ç‰©æ˜ç»†é›†åˆ
                 cart.getOrderItemList().add(orderItem);
             }else {
-                //9¡¢µÚ¶şÖÖÇé¿ö£¬ÒªÌí¼ÓµÄÉÌÆ·ÔÚ¹ºÎï³µ¶ÔÏóµÄ¹ºÎïÃ÷Ï¸ÖĞÒÑ¾­´æÔÚ
-                //¸üĞÂ¹ºÂòÊıÁ¿ Ô­ÓĞ¹ºÂòÊıÁ¿+ĞÂµÄ¹ºÂòÊıÁ¿
+                //9ã€ç¬¬äºŒç§æƒ…å†µï¼Œè¦æ·»åŠ çš„å•†å“åœ¨è´­ç‰©è½¦å¯¹è±¡çš„è´­ç‰©æ˜ç»†ä¸­å·²ç»å­˜åœ¨
+                //æ›´æ–°è´­ä¹°æ•°é‡ åŸæœ‰è´­ä¹°æ•°é‡+æ–°çš„è´­ä¹°æ•°é‡
                 orderItem.setNum(orderItem.getNum()+num);
-                //¸üĞÂµ±Ç°ÉÌÆ·ºÏ¼Æ½ğ¶î
+                //æ›´æ–°å½“å‰å•†å“åˆè®¡é‡‘é¢
                 orderItem.setTotalFee(new BigDecimal(orderItem.getNum()*item.getPrice().doubleValue()));
 
-                //µ÷Õû¹ºÎï³µ¹ºÂòÊıÁ¿Íê³Éºó£¬ĞèÒªÅĞ¶Ïµ±Ç°¹ºÂòÊıÁ¿ÊÇ·ñĞ¡ÓÚ1£¬Èç¹ûµ±Ç°ÉÌÆ·¹ºÂòÊıÁ¿Ğ¡ÓÚ1£¬ÒªÒªµ±Ç°¹ºÎï³µ
-                //¹ºÎïÃ÷Ï¸¼¯ºÏÒÆ³ı¸ÃÉÌÆ·
+                //è°ƒæ•´è´­ç‰©è½¦è´­ä¹°æ•°é‡å®Œæˆåï¼Œéœ€è¦åˆ¤æ–­å½“å‰è´­ä¹°æ•°é‡æ˜¯å¦å°äº1ï¼Œå¦‚æœå½“å‰å•†å“è´­ä¹°æ•°é‡å°äº1ï¼Œè¦è¦å½“å‰è´­ç‰©è½¦
+                //è´­ç‰©æ˜ç»†é›†åˆç§»é™¤è¯¥å•†å“
                 if(orderItem.getNum()<1){
                     cart.getOrderItemList().remove(orderItem);
                 }
 
-                //µ±¹ºÎï³µµÄ¹ºÎïÃ÷Ï¸¼¯ºÏÎª0£¬´Ó¹ºÎï³µ¼¯ºÏÒÆ³ıµ±Ç°ÉÌ¼Ò¹ºÎï³µ¶ÔÏó
+                //å½“è´­ç‰©è½¦çš„è´­ç‰©æ˜ç»†é›†åˆä¸º0ï¼Œä»è´­ç‰©è½¦é›†åˆç§»é™¤å½“å‰å•†å®¶è´­ç‰©è½¦å¯¹è±¡
                 if(cart.getOrderItemList().size()==0){
                     cartList.remove(cart);
                 }
@@ -100,20 +101,20 @@ public class CartServiceImpl implements CartService {
 
 
     /**
-     * ±éÀú¹ºÎï³µ¼¯ºÏ£¬ÅĞ¶ÏÊÇ·ñ´æÔÚ¸ÃÉÌ¼Ò¹ºÎï³µ¶ÔÏó
-     * @param cartList  ÒªËÑË÷µÄ¹ºÎï³µ¼¯ºÏ
-     * @param sellerId   Òª±È¶ÔµÄÉÌ¼Ò±àºÅ
-     * @return   ËÑË÷µ½µÄ¸ÃÉÌ¼ÒµÄ¹ºÎï³µ¶ÔÏó
+     * éå†è´­ç‰©è½¦é›†åˆï¼Œåˆ¤æ–­æ˜¯å¦å­˜åœ¨è¯¥å•†å®¶è´­ç‰©è½¦å¯¹è±¡
+     * @param cartList  è¦æœç´¢çš„è´­ç‰©è½¦é›†åˆ
+     * @param sellerId   è¦æ¯”å¯¹çš„å•†å®¶ç¼–å·
+     * @return   æœç´¢åˆ°çš„è¯¥å•†å®¶çš„è´­ç‰©è½¦å¯¹è±¡
      */
     private Cart searchCartListBySellerId(List<Cart> cartList,String sellerId){
 
-        //ÅĞ¶Ï¹ºÎï³µ¼¯ºÏÊÇ·ñÎª¿Õ
+        //åˆ¤æ–­è´­ç‰©è½¦é›†åˆæ˜¯å¦ä¸ºç©º
         if(cartList!=null){
-            //±éÀú¹ºÎï³µ¼¯ºÏ
+            //éå†è´­ç‰©è½¦é›†åˆ
             for (Cart cart : cartList) {
-                //ÌáÈ¡¹ºÎï³µ¶ÔÏóµÄÉÌ¼ÒÊôĞÔ£¬ºÍ´«ÈëµÄÉÌ¼Ò±àºÅ½øĞĞ±È¶Ô
+                //æå–è´­ç‰©è½¦å¯¹è±¡çš„å•†å®¶å±æ€§ï¼Œå’Œä¼ å…¥çš„å•†å®¶ç¼–å·è¿›è¡Œæ¯”å¯¹
                 if(cart.getSellerId().equals(sellerId)){
-                    //·µ»Øµ±Ç°¹ºÎï³µ¶ÔÏó
+                    //è¿”å›å½“å‰è´­ç‰©è½¦å¯¹è±¡
                     return cart;
                 }
             }
@@ -126,38 +127,38 @@ public class CartServiceImpl implements CartService {
 
 
     /**
-     * ´´½¨¹ºÎïÃ÷Ï¸
-     * @param item  Òª¹ºÂòµÄÉÌÆ·sku¶ÔÏó
-     * @param num   Òª¹ºÂòµÄÊıÁ¿
-     * @return   ¹ºÎïÃ÷Ï¸¶ÔÏó
+     * åˆ›å»ºè´­ç‰©æ˜ç»†
+     * @param item  è¦è´­ä¹°çš„å•†å“skuå¯¹è±¡
+     * @param num   è¦è´­ä¹°çš„æ•°é‡
+     * @return   è´­ç‰©æ˜ç»†å¯¹è±¡
      */
     private TbOrderItem createOrderItem(TbItem item,Integer num){
 
-        //ÅĞ¶Ï¹ºÂòÊıÁ¿ÊÇ·ñĞ¡ÓÚ1£¬¹ºÂòÊıÁ¿²»ºÏ·¨
+        //åˆ¤æ–­è´­ä¹°æ•°é‡æ˜¯å¦å°äº1ï¼Œè´­ä¹°æ•°é‡ä¸åˆæ³•
 
         if(num<1){
-            throw new RuntimeException("¹ºÂòÊıÁ¿²»ºÏ·¨");
+            throw new RuntimeException("è´­ä¹°æ•°é‡ä¸åˆæ³•");
         }
-        //new¹ºÎïÃ÷Ï¸¶ÔÏó
+        //newè´­ç‰©æ˜ç»†å¯¹è±¡
         TbOrderItem orderItem = new TbOrderItem();
 
-        //ÉèÖÃ¹ºÎïÃ÷Ï¸ÊôĞÔ
-        //ÉèÖÃÉÌÆ·±àºÅ
+        //è®¾ç½®è´­ç‰©æ˜ç»†å±æ€§
+        //è®¾ç½®å•†å“ç¼–å·
         orderItem.setGoodsId(item.getGoodsId());
-        //ÉèÖÃsku±àºÅ
+        //è®¾ç½®skuç¼–å·
         orderItem.setItemId(item.getId());
-        //ÉèÖÃ¹ºÂòÊıÁ¿
+        //è®¾ç½®è´­ä¹°æ•°é‡
         orderItem.setNum(num);
-        //Í¼Æ¬
+        //å›¾ç‰‡
         orderItem.setPicPath(item.getImage());
-        //¼Û¸ñ
+        //ä»·æ ¼
         orderItem.setPrice(item.getPrice());
-        //ÉÌ¼Ò±àºÅ
+        //å•†å®¶ç¼–å·
         orderItem.setSellerId(item.getSellerId());
-        //ÉÌÆ·±êÌâ
+        //å•†å“æ ‡é¢˜
         orderItem.setTitle(item.getTitle());
-        //ÉèÖÃµ¥¸öÉÌÆ·ºÏ¼Æ·ÑÓÃ  = ¹ºÂòÊıÁ¿*ÉÌÆ·µ¥¼Û
-        //´´½¨¹ºÂòÊıÁ¿¸ß¾«¶È
+        //è®¾ç½®å•ä¸ªå•†å“åˆè®¡è´¹ç”¨  = è´­ä¹°æ•°é‡*å•†å“å•ä»·
+        //åˆ›å»ºè´­ä¹°æ•°é‡é«˜ç²¾åº¦
         BigDecimal bigDecimalNum = new BigDecimal(num);
 
         orderItem.setTotalFee(bigDecimalNum.multiply(item.getPrice()));
@@ -168,15 +169,15 @@ public class CartServiceImpl implements CartService {
 
 
     /**
-     * //ÅĞ¶ÏÖ¸¶¨ÉÌ¼Ò¹ºÎï³µ¶ÔÏó£¬ÊÇ·ñ´æÔÚÖ¸¶¨¹ºÎïÃ÷Ï¸
+     * //åˆ¤æ–­æŒ‡å®šå•†å®¶è´­ç‰©è½¦å¯¹è±¡ï¼Œæ˜¯å¦å­˜åœ¨æŒ‡å®šè´­ç‰©æ˜ç»†
      * @param orderItemList
      * @param itemId
      * @return
      */
     private TbOrderItem searchOrderItemByItemid(List<TbOrderItem> orderItemList,Long itemId){
-        //±éÀú¹ºÎïÃ÷Ï¸
+        //éå†è´­ç‰©æ˜ç»†
         for (TbOrderItem orderItem : orderItemList) {
-            //ÌáÈ¡¹ºÎïÃ÷Ï¸¶ÔÏó£¬ÉÌÆ·sku±àºÅ£¬ºÍ´«µİ¹ıÀ´µÄÉÌÆ·sku±àºÅ±È¶Ô£¬¿´ÊÇ·ñÒ»ÖÂ
+            //æå–è´­ç‰©æ˜ç»†å¯¹è±¡ï¼Œå•†å“skuç¼–å·ï¼Œå’Œä¼ é€’è¿‡æ¥çš„å•†å“skuç¼–å·æ¯”å¯¹ï¼Œçœ‹æ˜¯å¦ä¸€è‡´
             if(orderItem.getItemId().longValue()==itemId.longValue()){
                 return orderItem;
             }
@@ -202,17 +203,17 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public void saveCartListToRedis(String username, List<Cart> cartList) {
-        System.out.println("´æÈë¹ºÎï³µÊı¾İ:"+username);
+        System.out.println("å­˜å…¥è´­ç‰©è½¦æ•°æ®:"+username);
         redisTemplate.boundHashOps("cartList").put(username,cartList);
     }
 
     @Override
     public List<Cart> mergeCartList(List<Cart> cookieCartlist, List<Cart> redisCartList) {
-        //±éÀúcookie¹ºÎï³µ¼¯ºÏ
+        //éå†cookieè´­ç‰©è½¦é›†åˆ
         for (Cart cart : cookieCartlist) {
-            //Ñ­»·±éÀú¹ºÎïÃ÷Ï¸¼¯ºÏ
+            //å¾ªç¯éå†è´­ç‰©æ˜ç»†é›†åˆ
             for (TbOrderItem orderItem : cart.getOrderItemList()) {
-                //µ÷ÓÃÌí¼Óµ½¹ºÎï³µ·½·¨
+                //è°ƒç”¨æ·»åŠ åˆ°è´­ç‰©è½¦æ–¹æ³•
               redisCartList=  addGoodsToCartList(redisCartList,orderItem.getItemId(),orderItem.getNum());
             }
         }
